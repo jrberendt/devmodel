@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body { margin: 0; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    <input type="file" id="ustl" accept=".stl"></input>
+    <button onclick="reader.readAsArrayBuffer(document.getElementById('ustl').files[0]);">Upload</button>
+    <input id="icolor" type="color"></input>
+    <canvas id="canvasID"></canvas>
+	<script type="module">
+        import * as THREE from "https://cdn.skypack.dev/three@0.136.0";
+        import { STLLoader } from "https://cdn.skypack.dev/three@0.136.0/examples/jsm/loaders/STLLoader.js";
+        const scene = new THREE.Scene();
+        const loader = new STLLoader();
+        const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        var canvas = document.getElementById("canvasID");
+        const renderer = new THREE.WebGLRenderer({canvas: canvas});
+        renderer.setSize( window.innerWidth / 1.1, window.innerHeight / 1.1);
+        window.objects = [];
+        window.reader = new FileReader();
+        reader.onload = function (e) {
+            const geometry = loader.parse(e.target.result);
+            const material = new THREE.MeshBasicMaterial( { color: document.getElementById("icolor").value } );
+            let i = new THREE.Mesh(geometry, material)
+            objects.push(i)
+            scene.add(i);
+            camera.position.z = 200;
+        }
+        var mouse = {x: 0, y: 0};
+        document.addEventListener('mousemove', onMouseMove, false);
+        document.addEventListener("mousedown", keyDown, false);
+        document.addEventListener("mouseup", keyUp, false);
+        var lmdown = false;
+        var rmdown = false;
+        function keyDown(e){
+            if(e.which === 1){
+                lmdown = true;
+            }
+            else if(e.which === 3){
+                rmdown = true;
+            }
+        }
+        function keyUp(e){
+            if(e.which === 1){
+                lmdown = false;
+            }
+            else if(e.which === 3){
+                rmdown = false;
+            }
+        }
+        function onMouseMove(event) {
+	        event.preventDefault();
+            if(objects[0] !== undefined){
+                if(lmdown === true){
+                    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	                mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+                    var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+	                vector.unproject( camera );
+	                var dir = vector.sub( camera.position ).normalize();
+	                var distance = - camera.position.z / dir.z;
+	                var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
+	                objects[0].position.copy(pos);
+                }
+                else if(rmdown === true){
+                    //TODO: Rotation
+                }
+            }
+        };
+        function animate() {
+			requestAnimationFrame( animate );
+			renderer.render( scene, camera );
+			};
+		animate();
+      </script>
+</body>
+</html>
